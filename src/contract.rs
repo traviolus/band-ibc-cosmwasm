@@ -150,7 +150,7 @@ pub fn try_set_channel(
 /// 
 /// - **multiplier** is an object of type [`u64`] the multiplier to use to multiply the oracle price by.
 /// 
-/// - **ask_count** is an object of type [`u64`] which is the number of BandChain validators that are requested to respond to this  oracle request.
+/// - **ask_count** is an object of type [`u64`] which is the number of BandChain validators that are requested to respond to this oracle request.
 /// 
 /// - **min_count** is an object of type [`u64`] which is the minimum number of validators necessary for the request to proceed to the execution phase.
 pub fn try_register_job(
@@ -201,7 +201,7 @@ pub fn try_register_job(
 ///
 /// - **info** is an object of type [`MessageInfo`].
 ///
-/// - **JOB_COUNTid** is an object of type [`String`] which is the ID of the oracle request job to update.
+/// - **job_id** is an object of type [`String`] which is the ID of the oracle request job to update.
 pub fn try_update_job_data(
     deps: DepsMut,
     env: Env,
@@ -254,9 +254,9 @@ pub fn try_update_job_data(
 /// ## Commands
 /// - **QueryMsg::Config {}** Returns general contract parameters using a custom [`ConfigResponse`] structure.
 /// 
-/// - **QueryMsg::Job {}** Returns information about the specified job using a custom [`Job`] structure.
+/// - **QueryMsg::Job { job_id }** Returns information about the specified job using a custom [`Job`] structure.
 /// 
-/// - **QueryMsg::Job {}** Returns the latest price for the specified asset symbol using a custom [`PriceData`] structure.
+/// - **QueryMsg::Price { symbol }** Returns the latest price for the specified asset symbol using a custom [`PriceData`] structure.
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
@@ -284,7 +284,7 @@ fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
 ///
 /// ## Params
 /// - **deps** is an object of type [`Deps`].
-/// - **JOB_COUNTid** is the ID of the registered job to query the information for.
+/// - **job_id** is the ID of the registered job to query the information for.
 fn query_job(deps: Deps, job_id: String) -> StdResult<Job> {
     JOBS.load(deps.storage, &job_id)
 }

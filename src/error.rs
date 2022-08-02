@@ -21,8 +21,8 @@ pub enum ContractError {
     #[error("Local Channel is not set")]
     ChannelNotSet {},
 
-    #[error("Provided request id is not registered")]
-    RequestNotFound {},
+    #[error("Provided job id is not registered")]
+    JobNotFound {},
 
     #[error("Only unordered channels are supported.")]
     OrderedChannel {},

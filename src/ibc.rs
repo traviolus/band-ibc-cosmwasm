@@ -12,7 +12,7 @@ use std::str::FromStr;
 use crate::error::ContractError;
 use crate::msg::OracleResponsePacket;
 use crate::obi::PriceDataOutput;
-use crate::state::{PriceData, CONFIG, PRICES, JOBS};
+use crate::state::{PriceData, CONFIG, JOBS, PRICES};
 
 pub const IBC_VERSION: &str = "bandchain-1";
 
@@ -108,17 +108,16 @@ pub fn execute_update(
     }
 
     let PriceDataOutput { rates } = PriceDataOutput::decode_obi(result.as_str())?;
-    let request = match JOBS.may_load(deps.storage, &client_id) {
+    let job = match JOBS.may_load(deps.storage, &client_id) {
         Ok(Some(data)) => data,
         Ok(None) => return fail_packet_receive("Invalid client id"),
         Err(e) => return fail_packet_receive(&e.to_string()),
     };
 
-    if request.symbols.len() != rates.len() {
+    if job.symbols.len() != rates.len() {
         return fail_packet_receive("Result and Calldata length mismatched");
     }
-    request
-        .symbols
+    job.symbols
         .iter()
         .zip(rates.iter())
         .for_each(|(symbol, &rate)| {
@@ -127,7 +126,7 @@ pub fn execute_update(
                     deps.storage,
                     symbol,
                     &PriceData {
-                        rate: Decimal::from_ratio(rate, request.multiplier),
+                        rate: Decimal::from_ratio(rate, job.multiplier),
                         bandchain_request_id: u64::from_str(request_id.as_str()).unwrap(),
                         bandchain_resolve_time: u64::from_str(resolve_time.as_str()).unwrap(),
                     },
@@ -138,7 +137,7 @@ pub fn execute_update(
     Ok(IbcReceiveResponse::new()
         .add_attributes(vec![
             attr("method", "execute_update"),
-            attr("request_id", client_id),
+            attr("job_id", client_id),
         ])
         .set_ack(make_ack_success()))
 }

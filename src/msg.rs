@@ -68,17 +68,17 @@ pub struct OracleRequestPacket {
 pub struct OracleResponsePacket {
     /// The unique identifier of the oracle request. This same unique ID will be sent back to the requester with the oracle response.
     pub client_id: String,
-    // The unique identifier for the oracle request associated with the response.
+    /// The unique identifier for the oracle request associated with the response.
     pub request_id: String,
-    // The number of validators among to the asked validators that actually responded to this oracle request prior to this oracle request being resolved.
+    /// The number of validators among to the asked validators that actually responded to this oracle request prior to this oracle request being resolved.
     pub ans_count: String,
-    // The UNIX epoch time at which the request was sent to BandChain.
+    /// The UNIX epoch time at which the request was sent to BandChain.
     pub request_time: String,
-    // The UNIX epoch time at which the request was resolved to the final result.
+    /// The UNIX epoch time at which the request was resolved to the final result.
     pub resolve_time: String,
-    // The status of this oracle request. One of OK, FAILURE, or EXPIRED.
+    /// The status of this oracle request. One of OK, FAILURE, or EXPIRED.
     pub resolve_status: String,
-    // The final aggregated value encoded in OBI format. Only available if status if OK.
+    /// The final aggregated value encoded in OBI format. Only available if status if OK.
     pub result: String,
 }
 
@@ -89,9 +89,9 @@ pub struct OracleResponsePacket {
 pub enum QueryMsg {
     /// Config returns contract settings specified in the custom [`ConfigResponse`] structure.
     Config {},
-    // Job returns information about the specified job using a custom [`Job`] structure.
+    /// Job returns information about the specified job using a custom [`Job`] structure.
     Job { job_id: String },
-    // Price returns the latest price for the specified asset symbol using a custom [`PriceData`] structure.
+    /// Price returns the latest price for the specified asset symbol using a custom [`PriceData`] structure.
     Price { symbol: String },
 }
 

@@ -9,13 +9,13 @@ use cw2::set_contract_version;
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, OracleRequestPacket, QueryMsg};
 use crate::obi::PriceDataInput;
-use crate::state::{Config, PriceData, Job, CONFIG, PRICES, JOBS, JOB_COUNT, ConfigResponse};
+use crate::state::{Config, ConfigResponse, Job, PriceData, CONFIG, JOBS, JOB_COUNT, PRICES};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:band-ibc";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-const REQUEST_ID_PREFIX: &str = "tvl";
+const JOB_ID_PREFIX: &str = "tvl";
 
 /// ## Description
 /// Creates a new contract with the specified parameters packed in the `msg` variable.
@@ -35,7 +35,7 @@ pub fn instantiate(
     deps: DepsMut,
     _env: Env,
     _info: MessageInfo,
-    msg: InstantiateMsg
+    msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
@@ -65,7 +65,7 @@ pub fn instantiate(
 /// - **ExecuteMsg::SetChannel {
 ///             channel
 ///         }** Set the IBC channel to be used for the oracle requests.
-/// 
+///
 /// - **ExecuteMsg::RegisterNewRequest {
 ///             oracle_script_id,
 ///             symbols,
@@ -73,9 +73,9 @@ pub fn instantiate(
 ///             ask_count,
 ///             min_count
 ///             }** Register a new oracle request job.
-/// 
-/// - **ExecuteMsg::UpdateData {
-///             request_id,
+///
+/// - **ExecuteMsg::UpdateJobData {
+///             job_id,
 ///             }** Request and update oracle data for the specified request job ID.
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
@@ -145,13 +145,13 @@ pub fn try_set_channel(
 /// - **info** is an object of type [`MessageInfo`].
 ///
 /// - **oracle_script_id** is an object of type [`u64`] which is the ID of the oracle script on BandChain to query the data from.
-/// 
+///
 /// - **symbols** is an object of type [`Vec<String>`] which is the list of symbols to query the price for.
-/// 
+///
 /// - **multiplier** is an object of type [`u64`] the multiplier to use to multiply the oracle price by.
-/// 
+///
 /// - **ask_count** is an object of type [`u64`] which is the number of BandChain validators that are requested to respond to this oracle request.
-/// 
+///
 /// - **min_count** is an object of type [`u64`] which is the minimum number of validators necessary for the request to proceed to the execution phase.
 pub fn try_register_job(
     deps: DepsMut,
@@ -167,9 +167,9 @@ pub fn try_register_job(
         return Err(ContractError::Unauthorized {});
     }
 
-    let new_requests_count = JOB_COUNT.load(deps.storage)? + 1;
-    let request_id = format!("{}-{}", REQUEST_ID_PREFIX, new_requests_count);
-    JOB_COUNT.save(deps.storage, &new_requests_count)?;
+    let new_job_count = JOB_COUNT.load(deps.storage)? + 1;
+    let job_id = format!("{}-{}", JOB_ID_PREFIX, new_job_count);
+    JOB_COUNT.save(deps.storage, &new_job_count)?;
 
     let calldata = PriceDataInput {
         symbol: symbols.clone(),
@@ -177,7 +177,7 @@ pub fn try_register_job(
     }
     .encode_obi()?;
 
-    let request = Job {
+    let job = Job {
         oracle_script_id,
         symbols,
         multiplier,
@@ -185,11 +185,11 @@ pub fn try_register_job(
         ask_count,
         min_count,
     };
-    JOBS.save(deps.storage, request_id.as_str(), &request)?;
+    JOBS.save(deps.storage, job_id.as_str(), &job)?;
 
     Ok(Response::new().add_attributes(vec![
-        attr("action", "register_new_request"),
-        attr("request_id", request_id),
+        attr("action", "register_new_job"),
+        attr("job_id", job_id),
     ]))
 }
 
@@ -212,9 +212,9 @@ pub fn try_update_job_data(
         return Err(ContractError::ChannelNotSet {});
     }
 
-    let request = match JOBS.may_load(deps.storage, &job_id) {
+    let job = match JOBS.may_load(deps.storage, &job_id) {
         Ok(Some(data)) => data,
-        Ok(None) => return Err(ContractError::RequestNotFound {}),
+        Ok(None) => return Err(ContractError::JobNotFound {}),
         Err(e) => return Err(ContractError::Std(e)),
     };
 
@@ -222,16 +222,16 @@ pub fn try_update_job_data(
         .add_attributes(vec![
             attr("action", "update_data"),
             attr("channel", config.channel.clone()),
-            attr("request_id", job_id.clone()),
+            attr("job_id", job_id.clone()),
         ])
         .add_message(IbcMsg::SendPacket {
             channel_id: config.channel,
             data: to_binary(&OracleRequestPacket {
                 client_id: job_id,
-                oracle_script_id: request.oracle_script_id,
-                calldata: request.calldata,
-                ask_count: request.ask_count,
-                min_count: request.min_count,
+                oracle_script_id: job.oracle_script_id,
+                calldata: job.calldata,
+                ask_count: job.ask_count,
+                min_count: job.min_count,
                 fee_limit: coins(1000000u128, "uband"),
                 prepare_gas: 100000u64,
                 execute_gas: 4000000u64,
@@ -239,7 +239,6 @@ pub fn try_update_job_data(
             timeout: IbcTimeout::with_timestamp(env.block.time.plus_seconds(300u64)),
         }))
 }
-
 
 /// ## Description
 /// Exposes all the queries available in the contract.
@@ -253,9 +252,9 @@ pub fn try_update_job_data(
 ///
 /// ## Commands
 /// - **QueryMsg::Config {}** Returns general contract parameters using a custom [`ConfigResponse`] structure.
-/// 
+///
 /// - **QueryMsg::Job { job_id }** Returns information about the specified job using a custom [`Job`] structure.
-/// 
+///
 /// - **QueryMsg::Price { symbol }** Returns the latest price for the specified asset symbol using a custom [`PriceData`] structure.
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {

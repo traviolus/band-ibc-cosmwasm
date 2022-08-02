@@ -5,13 +5,13 @@ use cosmwasm_std::{Addr, Decimal};
 use cw_storage_plus::{Item, Map};
 
 pub const CONFIG: Item<Config> = Item::new("config");
-pub const JOB_COUNT: Item<u64> = Item::new("requests_count");
-pub const JOBS: Map<&str, Job> = Map::new("request"); // client_id -> Request {}
+pub const JOB_COUNT: Item<u64> = Item::new("job_count");
+pub const JOBS: Map<&str, Job> = Map::new("job"); // job_id -> Job {}
 pub const PRICES: Map<&str, PriceData> = Map::new("prices");
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
-     /// Contract owner address
+    /// Contract owner address
     pub owner: Addr,
     /// The channel name to use for the oracle requests
     pub channel: String,

@@ -8,6 +8,6 @@ For information on the specifics of Band's oracle and BandChain, see their [docu
 
 ### Terra
 
-| network           | address                                                          |
-|-------------------|------------------------------------------------------------------|
-| testnet (pisco-1) | terra1npl2y65xzqgm4t2jatjfaykeu85q434ql60fxeeqzp4suq62m4rqtdjlyc |
+| network           | address                                                              |
+|-------------------|----------------------------------------------------------------------|
+| testnet (pisco-1) | [terra1te47jv6pg272n8unq490nvhh5m43v5n5kxfgrztly2tmkmqxzw8qphrjx2](https://finder.terra.money/testnet/address/terra1te47jv6pg272n8unq490nvhh5m43v5n5kxfgrztly2tmkmqxzw8qphrjx2) |
